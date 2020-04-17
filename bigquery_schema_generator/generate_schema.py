@@ -83,13 +83,15 @@ class SchemaGenerator:
                  quoted_values_are_strings=False,
                  debugging_interval=1000,
                  debugging_map=False,
-                 sanitize_names=False):
+                 sanitize_names=False,
+                 max_lines=0):
         self.input_format = input_format
         self.infer_mode = infer_mode
         self.keep_nulls = keep_nulls
         self.quoted_values_are_strings = quoted_values_are_strings
         self.debugging_interval = debugging_interval
         self.debugging_map = debugging_map
+        self.max_lines = max_lines
 
         # 'infer_mode' is supported for only input_format = 'csv' because
         # the header line gives us the complete list of fields to be expected in
@@ -187,6 +189,9 @@ class SchemaGenerator:
                 self.line_number += 1
                 if self.line_number % self.debugging_interval == 0:
                     logging.info("Processing line %s", self.line_number)
+                # When max_lines is 0 (disabled), this condition will never be true.
+                if self.line_number == self.max_lines:
+                    break
 
                 # Deduce the schema from this given data record.
                 if isinstance(json_object, dict):
@@ -753,6 +758,11 @@ def main():
         '--sanitize_names',
         help='Forces schema name to comply with BigQuery naming standard',
         action="store_true")
+    parser.add_argument(
+        '--max_lines',
+        help='Max number of lines to evaluate.',
+        type=int,
+        default=0)    
     args = parser.parse_args()
 
     # Configure logging.
@@ -765,7 +775,8 @@ def main():
         quoted_values_are_strings=args.quoted_values_are_strings,
         debugging_interval=args.debugging_interval,
         debugging_map=args.debugging_map,
-        sanitize_names=args.sanitize_names)
+        sanitize_names=args.sanitize_names,
+        max_lines=args.max_lines)
     generator.run()
 
 
